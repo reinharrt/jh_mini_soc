@@ -51,7 +51,7 @@ docker-compose up -d
 ```
 
 5. **Access Dashboard**
-- Dashboard: http://localhost
+- Dashboard: http://localhost:8080
 - API Docs: http://localhost:8000/docs
 
 ## 📁 Project Structure
