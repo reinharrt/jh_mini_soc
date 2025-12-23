@@ -1,2 +1,0 @@
-2025/12/23 11:20:03 [error] 1234#5678: *1 open() "/var/www/html/admin.php" failed (2: No such file or directory), client: 103.45.67.89, server: localhost, request: "GET /admin.php HTTP/1.1"
-2025/12/23 11:20:04 [error] 1234#5678: *2 open() "/var/www/html/wp-login.php" failed (2: No such file or directory), client: 103.45.67.89, server: localhost, request: "POST /wp-login.php HTTP/1.1"
