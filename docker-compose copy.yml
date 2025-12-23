@@ -29,13 +29,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-socadmin}:${POSTGRES_PASSWORD:-socpass123}@postgres:5432/${POSTGRES_DB:-mini_soc}
       LOG_PATH: /logs
     volumes:
-      # Mount LOG FILES directly from host (NOT the logs folder)
-      - /var/log/auth.log:/logs/ssh/auth.log:ro
-      - /var/log/nginx/access.log:/logs/nginx/access.log:ro
-      - /var/log/nginx/error.log:/logs/nginx/error.log:ro
-      - /var/log/nginx/test-access.log:/logs/nginx/test-access.log:ro
-      - /var/log/nginx/test-error.log:/logs/nginx/test-error.log:ro
-      # Mount backend code for development
+      - ./logs:/logs:ro
       - ./backend:/app
     ports:
       - "8000:8000"
@@ -45,7 +39,6 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    user: root
 
   frontend:
     build:
@@ -53,7 +46,7 @@ services:
       dockerfile: Dockerfile
     container_name: soc-frontend
     ports:
-      - "8080:80"
+      - "8080:80"  # Host port 8080 -> Container port 80
     networks:
       - soc-network
     depends_on:

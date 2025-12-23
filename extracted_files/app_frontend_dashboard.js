@@ -1,7 +1,7 @@
 // Dashboard Overview Component
 class Dashboard {
     constructor() {
-        this.refreshInterval = 5000; // 5 seconds
+        this.refreshInterval = 5000;
         this.intervalId = null;
     }
 
@@ -12,15 +12,12 @@ class Dashboard {
 
     async loadData() {
         try {
-            // Load SSH stats
             const sshStats = await sshApi.getStats(24);
             this.updateSSHStats(sshStats);
 
-            // Load Nginx stats
             const nginxStats = await nginxApi.getStats(24);
             this.updateNginxStats(nginxStats);
 
-            // Update last update time
             document.getElementById('lastUpdate').textContent = 
                 `Last update: ${new Date().toLocaleTimeString('id-ID')}`;
 
@@ -36,7 +33,6 @@ class Dashboard {
         document.getElementById('stat-ssh-failed').textContent = 
             stats.failed.toLocaleString();
 
-        // Top failed IPs
         const topFailedIpsEl = document.getElementById('top-failed-ips');
         if (stats.top_failed_ips && stats.top_failed_ips.length > 0) {
             topFailedIpsEl.innerHTML = stats.top_failed_ips
@@ -44,7 +40,7 @@ class Dashboard {
                 .map(item => `
                     <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
                         <div class="flex items-center space-x-3">
-                            <span class="text-red-500">⚠️</span>
+                            <i class="fas fa-ban text-red-500"></i>
                             <div>
                                 <p class="font-mono text-sm">${item.ip}</p>
                                 <p class="text-xs text-gray-400">${item.count} failed attempts</p>
@@ -65,7 +61,6 @@ class Dashboard {
         const avgTime = (stats.access.avg_response_time * 1000).toFixed(0);
         document.getElementById('stat-nginx-avgtime').textContent = `${avgTime}ms`;
 
-        // Top paths
         const topPathsEl = document.getElementById('top-paths');
         if (stats.access.top_paths && stats.access.top_paths.length > 0) {
             topPathsEl.innerHTML = stats.access.top_paths
@@ -98,7 +93,6 @@ class Dashboard {
     }
 }
 
-// Global dashboard instance
 let dashboardInstance = null;
 
 function initDashboard() {

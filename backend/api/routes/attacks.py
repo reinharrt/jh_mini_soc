@@ -8,64 +8,12 @@ from models.attack_log import AttackLog
 
 router = APIRouter()
 
-@router.get("/logs")
-def get_attack_logs(
-    limit: int = Query(100, le=1000),
-    offset: int = 0,
-    attack_type: Optional[str] = None,
-    severity: Optional[str] = None,
-    resolved_only: bool = False,
-    source_ip: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    """Get attack logs with filtering"""
-    query = db.query(AttackLog)
-    
-    if attack_type:
-        query = query.filter(AttackLog.attack_type == attack_type)
-    if severity:
-        query = query.filter(AttackLog.severity == severity)
-    if resolved_only:
-        query = query.filter(AttackLog.resolved == False)
-    if source_ip:
-        query = query.filter(AttackLog.source_ip == source_ip)
-    
-    total = query.count()
-    attacks = query.order_by(desc(AttackLog.timestamp)).offset(offset).limit(limit).all()
-    
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "attacks": [
-            {
-                "id": attack.id,
-                "timestamp": attack.timestamp.isoformat(),
-                "attack_type": attack.attack_type,
-                "severity": attack.severity,
-                "description": attack.description,
-                "source_ip": attack.source_ip,
-                "source_country": attack.source_country,
-                "target_path": attack.target_path,
-                "http_method": attack.http_method,
-                "user_agent": attack.user_agent,
-                "pattern_matched": attack.pattern_matched,
-                "blocked": attack.blocked,
-                "resolved": attack.resolved,
-                "related_log_type": attack.related_log_type,
-                "related_log_id": attack.related_log_id
-            }
-            for attack in attacks
-        ]
-    }
-
-
-@router.get("/stats")
-def get_attack_stats(
+@router.get("/summary")
+def get_attack_summary(
     hours: int = Query(24, le=168),
     db: Session = Depends(get_db)
 ):
-    """Get attack statistics"""
+    """Get attack summary statistics"""
     since = datetime.utcnow() - timedelta(hours=hours)
     
     # Total attacks
@@ -91,6 +39,45 @@ def get_attack_stats(
         AttackLog.blocked == True
     ).scalar()
     
+    return {
+        "period_hours": hours,
+        "total_attacks": total_attacks or 0,
+        "critical_attacks": critical_attacks or 0,
+        "unresolved_attacks": unresolved_attacks or 0,
+        "blocked_attacks": blocked_attacks or 0
+    }
+
+@router.get("/stats")
+def get_attack_stats(
+    hours: int = Query(24, le=168),
+    db: Session = Depends(get_db)
+):
+    """Get detailed attack statistics"""
+    since = datetime.utcnow() - timedelta(hours=hours)
+    
+    # Total attacks
+    total_attacks = db.query(func.count(AttackLog.id)).filter(
+        AttackLog.timestamp >= since
+    ).scalar()
+    
+    # Critical attacks
+    critical_attacks = db.query(func.count(AttackLog.id)).filter(
+        AttackLog.timestamp >= since,
+        AttackLog.severity == 'CRITICAL'
+    ).scalar()
+    
+    # Unresolved
+    unresolved_attacks = db.query(func.count(AttackLog.id)).filter(
+        AttackLog.timestamp >= since,
+        AttackLog.resolved == False
+    ).scalar()
+    
+    # Blocked
+    blocked_attacks = db.query(func.count(AttackLog.id)).filter(
+        AttackLog.timestamp >= since,
+        AttackLog.blocked == True
+    ).scalar()
+    
     # Severity distribution
     severity_dist = db.query(
         AttackLog.severity,
@@ -101,7 +88,7 @@ def get_attack_stats(
         AttackLog.severity
     ).all()
     
-    # Attack types distribution
+    # Attack types
     attack_types = db.query(
         AttackLog.attack_type,
         func.count(AttackLog.id).label('count')
@@ -113,27 +100,21 @@ def get_attack_stats(
         desc('count')
     ).all()
     
-    # Top attackers (by IP)
+    # Top attackers
     top_attackers = db.query(
         AttackLog.source_ip,
         func.count(AttackLog.id).label('count')
     ).filter(
-        AttackLog.timestamp >= since,
-        AttackLog.source_ip.isnot(None)
+        AttackLog.timestamp >= since
     ).group_by(
         AttackLog.source_ip
     ).order_by(
         desc('count')
     ).limit(10).all()
     
-    # Attack timeline (per hour)
-    if hours <= 24:
-        time_format = func.date_trunc('hour', AttackLog.timestamp)
-    else:
-        time_format = func.date_trunc('day', AttackLog.timestamp)
-    
+    # Timeline (hourly)
     timeline = db.query(
-        time_format.label('time'),
+        func.date_trunc('hour', AttackLog.timestamp).label('time'),
         func.count(AttackLog.id).label('count')
     ).filter(
         AttackLog.timestamp >= since
@@ -148,55 +129,68 @@ def get_attack_stats(
         "unresolved_attacks": unresolved_attacks or 0,
         "blocked_attacks": blocked_attacks or 0,
         "severity_distribution": [
-            {"severity": severity, "count": count} 
+            {"severity": severity, "count": count}
             for severity, count in severity_dist
         ],
         "attack_types": [
-            {"type": attack_type, "count": count} 
-            for attack_type, count in attack_types
+            {"type": atype, "count": count}
+            for atype, count in attack_types
         ],
         "top_attackers": [
-            {"ip": ip, "count": count} 
+            {"ip": ip, "count": count}
             for ip, count in top_attackers
         ],
         "timeline": [
-            {
-                "time": t.isoformat() if t else None,
-                "count": count
-            }
+            {"time": t.isoformat(), "count": count}
             for t, count in timeline
         ]
     }
 
-
-@router.get("/summary")
-def get_attack_summary(
-    hours: int = Query(24, le=168),
+@router.get("/logs")
+def get_attack_logs(
+    limit: int = Query(100, le=1000),
+    offset: int = 0,
+    attack_type: Optional[str] = None,
+    severity: Optional[str] = None,
+    resolved_only: bool = False,
     db: Session = Depends(get_db)
 ):
-    """Get quick attack summary for dashboard badge"""
-    since = datetime.utcnow() - timedelta(hours=hours)
+    """Get attack logs with filtering"""
+    query = db.query(AttackLog)
     
-    total = db.query(func.count(AttackLog.id)).filter(
-        AttackLog.timestamp >= since
-    ).scalar()
+    if attack_type:
+        query = query.filter(AttackLog.attack_type == attack_type)
+    if severity:
+        query = query.filter(AttackLog.severity == severity)
+    if resolved_only:
+        query = query.filter(AttackLog.resolved == False)
     
-    critical = db.query(func.count(AttackLog.id)).filter(
-        AttackLog.timestamp >= since,
-        AttackLog.severity == 'CRITICAL'
-    ).scalar()
-    
-    unresolved = db.query(func.count(AttackLog.id)).filter(
-        AttackLog.timestamp >= since,
-        AttackLog.resolved == False
-    ).scalar()
+    total = query.count()
+    logs = query.order_by(desc(AttackLog.timestamp)).offset(offset).limit(limit).all()
     
     return {
-        "total_attacks": total or 0,
-        "critical_attacks": critical or 0,
-        "unresolved_attacks": unresolved or 0
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "attacks": [
+            {
+                "id": log.id,
+                "timestamp": log.timestamp.isoformat(),
+                "attack_type": log.attack_type,
+                "severity": log.severity,
+                "description": log.description,
+                "source_ip": log.source_ip,
+                "source_country": log.source_country,
+                "target_path": log.target_path,
+                "http_method": log.http_method,
+                "user_agent": log.user_agent,
+                "pattern_matched": log.pattern_matched,
+                "blocked": log.blocked,
+                "resolved": log.resolved
+            }
+            for log in logs
+        ]
     }
-
 
 @router.post("/{attack_id}/resolve")
 def resolve_attack(
@@ -214,17 +208,16 @@ def resolve_attack(
     
     return {
         "success": True,
-        "message": f"Attack {attack_id} marked as resolved",
-        "attack_id": attack_id
+        "attack_id": attack_id,
+        "message": "Attack marked as resolved"
     }
 
-
 @router.post("/{attack_id}/block")
-def block_attack_ip(
+def block_attack(
     attack_id: int,
     db: Session = Depends(get_db)
 ):
-    """Mark an attack as blocked (for future implementation with firewall)"""
+    """Mark an attack as blocked"""
     attack = db.query(AttackLog).filter(AttackLog.id == attack_id).first()
     
     if not attack:
@@ -233,47 +226,8 @@ def block_attack_ip(
     attack.blocked = True
     db.commit()
     
-    # TODO: Implement actual IP blocking with iptables or fail2ban
-    
     return {
         "success": True,
-        "message": f"Attack from {attack.source_ip} marked as blocked",
         "attack_id": attack_id,
-        "source_ip": attack.source_ip
-    }
-
-
-@router.get("/types")
-def get_attack_types(db: Session = Depends(get_db)):
-    """Get list of all attack types detected"""
-    types = db.query(AttackLog.attack_type).distinct().all()
-    
-    return {
-        "attack_types": [t[0] for t in types if t[0]]
-    }
-
-
-@router.get("/recent")
-def get_recent_attacks(
-    limit: int = Query(10, le=50),
-    db: Session = Depends(get_db)
-):
-    """Get most recent attacks for real-time monitoring"""
-    attacks = db.query(AttackLog).order_by(
-        desc(AttackLog.timestamp)
-    ).limit(limit).all()
-    
-    return {
-        "attacks": [
-            {
-                "id": attack.id,
-                "timestamp": attack.timestamp.isoformat(),
-                "attack_type": attack.attack_type,
-                "severity": attack.severity,
-                "source_ip": attack.source_ip,
-                "target_path": attack.target_path,
-                "resolved": attack.resolved
-            }
-            for attack in attacks
-        ]
+        "message": "Attack marked as blocked"
     }

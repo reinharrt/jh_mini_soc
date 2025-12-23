@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import ssh, nginx, attacks
+from api.routes import ssh, nginx, attacks  # ← tambahkan attacks
 
 app = FastAPI(
     title="Mini SOC API",
@@ -20,7 +20,7 @@ app.add_middleware(
 # Include routers
 app.include_router(ssh.router, prefix="/api/ssh", tags=["SSH Logs"])
 app.include_router(nginx.router, prefix="/api/nginx", tags=["Nginx Logs"])
-app.include_router(attacks.router, prefix="/api/attacks", tags=["Attack Detection"])
+app.include_router(attacks.router, prefix="/api/attacks", tags=["Attack Detection"])  # ← TAMBAHKAN INI
 
 @app.get("/")
 async def root():
@@ -32,10 +32,8 @@ async def root():
 
 @app.get("/health")
 async def health_root():
-    """Health check endpoint at root"""
     return {"status": "healthy"}
 
 @app.get("/api/health")
 async def health_api():
-    """Health check endpoint at /api/health for consistency"""
     return {"status": "healthy"}

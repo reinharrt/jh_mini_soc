@@ -5,7 +5,7 @@ class NginxMonitor {
         this.intervalId = null;
         this.currentPage = 0;
         this.pageSize = 50;
-        this.currentView = 'access'; // access or error
+        this.currentView = 'access';
     }
 
     async init() {
@@ -21,19 +21,31 @@ class NginxMonitor {
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">Total Requests</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Total Requests</p>
+                            <i class="fas fa-globe text-2xl text-blue-500"></i>
+                        </div>
                         <p id="nginx-stat-total" class="text-2xl font-bold">0</p>
                     </div>
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">2xx Success</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">2xx Success</p>
+                            <i class="fas fa-circle-check text-2xl text-green-500"></i>
+                        </div>
                         <p id="nginx-stat-2xx" class="text-2xl font-bold text-green-500">0</p>
                     </div>
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">4xx Errors</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">4xx Errors</p>
+                            <i class="fas fa-triangle-exclamation text-2xl text-yellow-500"></i>
+                        </div>
                         <p id="nginx-stat-4xx" class="text-2xl font-bold text-yellow-500">0</p>
                     </div>
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">5xx Errors</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">5xx Errors</p>
+                            <i class="fas fa-circle-xmark text-2xl text-red-500"></i>
+                        </div>
                         <p id="nginx-stat-5xx" class="text-2xl font-bold text-red-500">0</p>
                     </div>
                 </div>
@@ -42,13 +54,13 @@ class NginxMonitor {
                 <div class="flex space-x-2">
                     <button onclick="nginxMonitor.switchView('access')" 
                         id="btn-view-access"
-                        class="px-4 py-2 bg-blue-600 text-white rounded">
-                        Access Logs
+                        class="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2">
+                        <i class="fas fa-list"></i> Access Logs
                     </button>
                     <button onclick="nginxMonitor.switchView('error')"
                         id="btn-view-error"
-                        class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">
-                        Error Logs
+                        class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 flex items-center gap-2">
+                        <i class="fas fa-bug"></i> Error Logs
                     </button>
                 </div>
 
@@ -71,7 +83,7 @@ class NginxMonitor {
                                 <option value="500">500 Error</option>
                             </select>
                             <button onclick="nginxMonitor.loadLogs()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
-                                Apply Filters
+                                <i class="fas fa-filter mr-1"></i> Apply Filters
                             </button>
                         </div>
                     </div>
@@ -115,7 +127,7 @@ class NginxMonitor {
                                 <option value="crit">Critical</option>
                             </select>
                             <button onclick="nginxMonitor.loadLogs()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
-                                Apply Filters
+                                <i class="fas fa-filter mr-1"></i> Apply Filters
                             </button>
                         </div>
                     </div>
@@ -150,13 +162,11 @@ class NginxMonitor {
     switchView(view) {
         this.currentView = view;
         
-        // Update buttons
         document.getElementById('btn-view-access').className = 
-            view === 'access' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600';
+            view === 'access' ? 'px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2' : 'px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 flex items-center gap-2';
         document.getElementById('btn-view-error').className = 
-            view === 'error' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600';
+            view === 'error' ? 'px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2' : 'px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 flex items-center gap-2';
         
-        // Toggle views
         document.getElementById('nginx-access-view').classList.toggle('hidden', view !== 'access');
         document.getElementById('nginx-error-view').classList.toggle('hidden', view !== 'error');
         
@@ -165,7 +175,6 @@ class NginxMonitor {
 
     async loadLogs() {
         try {
-            // Load stats
             const stats = await nginxApi.getStats(24);
             this.updateStats(stats);
 
@@ -233,7 +242,9 @@ class NginxMonitor {
         if (logs.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-8 text-gray-500">No logs found</td>
+                    <td colspan="7" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox mr-2"></i> No logs found
+                    </td>
                 </tr>
             `;
             return;
@@ -258,7 +269,9 @@ class NginxMonitor {
         if (logs.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center py-8 text-gray-500">No errors found</td>
+                    <td colspan="4" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox mr-2"></i> No errors found
+                    </td>
                 </tr>
             `;
             return;
@@ -267,11 +280,35 @@ class NginxMonitor {
         tbody.innerHTML = logs.map(log => `
             <tr class="fade-in">
                 <td class="text-xs whitespace-nowrap">${formatTimestamp(log.timestamp)}</td>
-                <td><span class="badge ${log.level === 'error' ? 'badge-danger' : log.level === 'warn' ? 'badge-warning' : 'badge-info'}">${log.level}</span></td>
+                <td>
+                    <span class="badge ${this.getErrorLevelBadge(log.level)}">
+                        ${this.getErrorLevelIcon(log.level)} ${log.level}
+                    </span>
+                </td>
                 <td class="text-sm">${log.message}</td>
                 <td class="text-sm font-mono">${log.client_ip || '-'}</td>
             </tr>
         `).join('');
+    }
+
+    getErrorLevelBadge(level) {
+        const badges = {
+            'error': 'badge-danger',
+            'warn': 'badge-warning',
+            'crit': 'badge-danger',
+            'alert': 'badge-danger'
+        };
+        return badges[level] || 'badge-info';
+    }
+
+    getErrorLevelIcon(level) {
+        const icons = {
+            'error': '<i class="fas fa-circle-xmark"></i>',
+            'warn': '<i class="fas fa-triangle-exclamation"></i>',
+            'crit': '<i class="fas fa-skull-crossbones"></i>',
+            'alert': '<i class="fas fa-bell"></i>'
+        };
+        return icons[level] || '<i class="fas fa-info-circle"></i>';
     }
 
     startAutoRefresh() {
@@ -288,7 +325,6 @@ class NginxMonitor {
     }
 }
 
-// Global instance
 let nginxMonitor = null;
 
 function initNginxMonitor() {

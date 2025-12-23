@@ -1,7 +1,7 @@
 // Attack Monitor Component
 class AttackMonitor {
     constructor() {
-        this.refreshInterval = 3000; // 3 seconds
+        this.refreshInterval = 3000;
         this.intervalId = null;
         this.currentPage = 0;
         this.pageSize = 50;
@@ -17,10 +17,10 @@ class AttackMonitor {
         const container = document.getElementById('attack-dashboard');
         container.innerHTML = `
             <div class="space-y-6">
-                <!-- Alert Banner for Critical Attacks -->
+                <!-- Alert Banner -->
                 <div id="critical-alert" class="hidden bg-red-900 border-l-4 border-red-500 p-4 rounded">
                     <div class="flex items-center">
-                        <span class="text-2xl mr-3">🚨</span>
+                        <i class="fas fa-siren text-2xl mr-3 text-red-500"></i>
                         <div>
                             <p class="font-bold text-red-100">Critical Security Alert!</p>
                             <p class="text-red-200 text-sm" id="critical-message"></p>
@@ -33,7 +33,7 @@ class AttackMonitor {
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm text-gray-400">Total Attacks</p>
-                            <span class="text-2xl">⚠️</span>
+                            <i class="fas fa-shield-virus text-2xl text-red-500"></i>
                         </div>
                         <p id="attack-stat-total" class="text-2xl font-bold text-red-500">0</p>
                         <p class="text-sm text-gray-500 mt-1">Last 24 hours</p>
@@ -42,7 +42,7 @@ class AttackMonitor {
                     <div class="bg-gray-800 rounded-lg p-4 border border-red-900">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm text-gray-400">Critical</p>
-                            <span class="text-2xl">🔴</span>
+                            <i class="fas fa-circle-exclamation text-2xl text-red-600"></i>
                         </div>
                         <p id="attack-stat-critical" class="text-2xl font-bold text-red-600">0</p>
                         <p class="text-sm text-gray-500 mt-1">Immediate action required</p>
@@ -51,7 +51,7 @@ class AttackMonitor {
                     <div class="bg-gray-800 rounded-lg p-4 border border-orange-900">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm text-gray-400">High Priority</p>
-                            <span class="text-2xl">🟠</span>
+                            <i class="fas fa-triangle-exclamation text-2xl text-orange-500"></i>
                         </div>
                         <p id="attack-stat-high" class="text-2xl font-bold text-orange-500">0</p>
                         <p class="text-sm text-gray-500 mt-1">Requires attention</p>
@@ -60,7 +60,7 @@ class AttackMonitor {
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
                         <div class="flex items-center justify-between mb-2">
                             <p class="text-sm text-gray-400">Unresolved</p>
-                            <span class="text-2xl">📋</span>
+                            <i class="fas fa-clipboard-list text-2xl text-yellow-500"></i>
                         </div>
                         <p id="attack-stat-unresolved" class="text-2xl font-bold text-yellow-500">0</p>
                         <p class="text-sm text-gray-500 mt-1">Pending review</p>
@@ -70,15 +70,15 @@ class AttackMonitor {
                 <!-- Attack Types Distribution -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 flex items-center">
-                            <span class="mr-2">🎯</span> Attack Types
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <i class="fas fa-crosshairs"></i> Attack Types
                         </h3>
                         <div id="attack-types-chart" class="space-y-2"></div>
                     </div>
 
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 flex items-center">
-                            <span class="mr-2">🌍</span> Top Attackers
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <i class="fas fa-user-secret"></i> Top Attackers
                         </h3>
                         <div id="top-attackers-list" class="space-y-2"></div>
                     </div>
@@ -108,7 +108,7 @@ class AttackMonitor {
                             <span class="text-sm">Unresolved Only</span>
                         </label>
                         <button onclick="attackMonitor.loadData()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
-                            Apply Filters
+                            <i class="fas fa-filter mr-1"></i> Apply Filters
                         </button>
                     </div>
                 </div>
@@ -145,16 +145,10 @@ class AttackMonitor {
 
     async loadData() {
         try {
-            // Load stats
             const stats = await this.loadStats();
             this.updateStats(stats);
-
-            // Load attack logs
             await this.loadAttackLogs();
-
-            // Show critical alert if needed
             this.showCriticalAlert(stats);
-
         } catch (error) {
             console.error('Error loading attack data:', error);
         }
@@ -195,10 +189,7 @@ class AttackMonitor {
         document.getElementById('attack-stat-unresolved').textContent = 
             stats.unresolved_attacks.toLocaleString();
 
-        // Render attack types chart
         this.renderAttackTypes(stats.attack_types);
-
-        // Render top attackers
         this.renderTopAttackers(stats.top_attackers);
     }
 
@@ -239,7 +230,7 @@ class AttackMonitor {
         container.innerHTML = attackers.slice(0, 5).map(attacker => `
             <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
                 <div class="flex items-center space-x-3">
-                    <span class="text-red-500">🎯</span>
+                    <i class="fas fa-skull-crossbones text-red-500"></i>
                     <div>
                         <p class="font-mono text-sm">${attacker.ip}</p>
                         <p class="text-xs text-gray-400">${attacker.count} attack attempts</p>
@@ -280,15 +271,15 @@ class AttackMonitor {
                 <td class="text-sm text-gray-300">${log.description}</td>
                 <td>
                     ${log.resolved 
-                        ? '<span class="badge badge-success">✓ Resolved</span>'
-                        : '<span class="badge badge-warning">⚠ Pending</span>'
+                        ? '<span class="badge badge-success"><i class="fas fa-check"></i> Resolved</span>'
+                        : '<span class="badge badge-warning"><i class="fas fa-clock"></i> Pending</span>'
                     }
                 </td>
                 <td>
                     ${!log.resolved 
                         ? `<button onclick="attackMonitor.resolveAttack(${log.id})" 
                              class="text-xs bg-green-600 hover:bg-green-700 px-2 py-1 rounded">
-                             Mark Resolved
+                             <i class="fas fa-check-circle"></i> Mark Resolved
                            </button>`
                         : ''
                     }
@@ -309,12 +300,12 @@ class AttackMonitor {
 
     getSeverityIcon(severity) {
         const icons = {
-            'CRITICAL': '🔴',
-            'HIGH': '🟠',
-            'MEDIUM': '🟡',
-            'LOW': '🟢'
+            'CRITICAL': '<i class="fas fa-circle-xmark"></i>',
+            'HIGH': '<i class="fas fa-exclamation-circle"></i>',
+            'MEDIUM': '<i class="fas fa-info-circle"></i>',
+            'LOW': '<i class="fas fa-check-circle"></i>'
         };
-        return icons[severity] || '⚪';
+        return icons[severity] || '<i class="fas fa-circle"></i>';
     }
 
     getSeverityRowClass(severity) {
@@ -343,7 +334,7 @@ class AttackMonitor {
             
             if (response.ok) {
                 console.log(`Attack ${attackId} marked as resolved`);
-                await this.loadData(); // Reload data
+                await this.loadData();
             }
         } catch (error) {
             console.error('Error resolving attack:', error);
@@ -364,7 +355,6 @@ class AttackMonitor {
     }
 }
 
-// Global instance
 let attackMonitor = null;
 
 function initAttackMonitor() {

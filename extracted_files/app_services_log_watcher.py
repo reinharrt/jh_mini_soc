@@ -138,6 +138,10 @@ def create_log_watcher():
             'path': os.path.join(log_base, 'nginx', 'access.log'),
             'parser': NginxAccessParser()
         },
+        'nginx_test_access': {  # <-- TAMBAHKAN INI
+            'path': os.path.join(log_base, 'nginx', 'test-access.log'),
+            'parser': NginxAccessParser()
+        },
         'nginx_error': {
             'path': os.path.join(log_base, 'nginx', 'error.log'),
             'parser': NginxErrorParser()

@@ -1,7 +1,7 @@
 // SSH Monitor Component
 class SSHMonitor {
     constructor() {
-        this.refreshInterval = 3000; // 3 seconds
+        this.refreshInterval = 3000;
         this.intervalId = null;
         this.currentPage = 0;
         this.pageSize = 50;
@@ -20,19 +20,31 @@ class SSHMonitor {
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">Total Attempts</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Total Attempts</p>
+                            <i class="fas fa-network-wired text-2xl text-blue-500"></i>
+                        </div>
                         <p id="ssh-stat-total" class="text-2xl font-bold">0</p>
                     </div>
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">Successful</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Successful</p>
+                            <i class="fas fa-check-circle text-2xl text-green-500"></i>
+                        </div>
                         <p id="ssh-stat-success" class="text-2xl font-bold text-green-500">0</p>
                     </div>
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">Failed</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Failed</p>
+                            <i class="fas fa-times-circle text-2xl text-red-500"></i>
+                        </div>
                         <p id="ssh-stat-failed" class="text-2xl font-bold text-red-500">0</p>
                     </div>
                     <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p class="text-sm text-gray-400 mb-1">Suspicious</p>
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm text-gray-400">Suspicious</p>
+                            <i class="fas fa-user-secret text-2xl text-yellow-500"></i>
+                        </div>
                         <p id="ssh-stat-suspicious" class="text-2xl font-bold text-yellow-500">0</p>
                     </div>
                 </div>
@@ -50,7 +62,7 @@ class SSHMonitor {
                             <span class="text-sm">Suspicious Only</span>
                         </label>
                         <button onclick="sshMonitor.loadLogs()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm">
-                            Apply Filters
+                            <i class="fas fa-filter mr-1"></i> Apply Filters
                         </button>
                     </div>
                 </div>
@@ -86,7 +98,6 @@ class SSHMonitor {
 
     async loadLogs() {
         try {
-            // Get filters
             const status = document.getElementById('ssh-filter-status')?.value || '';
             const suspiciousOnly = document.getElementById('ssh-filter-suspicious')?.checked || false;
 
@@ -98,11 +109,9 @@ class SSHMonitor {
             if (status) params.status = status;
             if (suspiciousOnly) params.suspicious_only = true;
 
-            // Load stats
             const stats = await sshApi.getStats(24);
             this.updateStats(stats);
 
-            // Load logs
             const response = await sshApi.getLogs(params);
             this.renderLogs(response.logs);
 
@@ -111,6 +120,7 @@ class SSHMonitor {
             document.getElementById('ssh-logs-tbody').innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
                         Error loading logs: ${error.message}
                     </td>
                 </tr>
@@ -136,7 +146,7 @@ class SSHMonitor {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center py-8 text-gray-500">
-                        No logs found
+                        <i class="fas fa-inbox mr-2"></i> No logs found
                     </td>
                 </tr>
             `;
@@ -159,18 +169,28 @@ class SSHMonitor {
                 <td>
                     <span class="font-mono text-sm">
                         ${log.ip_address || '-'}
-                        ${log.is_suspicious ? '<span class="text-red-500 ml-1">⚠️</span>' : ''}
+                        ${log.is_suspicious ? '<i class="fas fa-exclamation-triangle text-red-500 ml-1"></i>' : ''}
                     </span>
                 </td>
                 <td class="text-sm">${log.port || '-'}</td>
                 <td>
                     <span class="badge ${getStatusBadge(log.status)}">
-                        ${log.status}
+                        ${this.getStatusIcon(log.status)} ${log.status}
                     </span>
                 </td>
                 <td class="text-xs text-gray-400">${log.auth_method || '-'}</td>
             </tr>
         `).join('');
+    }
+
+    getStatusIcon(status) {
+        const icons = {
+            'success': '<i class="fas fa-check"></i>',
+            'failed': '<i class="fas fa-times"></i>',
+            'session': '<i class="fas fa-circle-dot"></i>',
+            'closed': '<i class="fas fa-door-closed"></i>'
+        };
+        return icons[status] || '<i class="fas fa-question"></i>';
     }
 
     startAutoRefresh() {
@@ -187,7 +207,6 @@ class SSHMonitor {
     }
 }
 
-// Global instance
 let sshMonitor = null;
 
 function initSSHMonitor() {

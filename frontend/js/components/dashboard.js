@@ -10,8 +10,13 @@ class Dashboard {
         this.startAutoRefresh();
     }
 
-    async loadData() {
+async loadData() {
         try {
+            // Load attack stats
+            const attackResponse = await fetch('/api/attacks/summary?hours=24');
+            const attackStats = await attackResponse.json();
+            this.updateAttackStats(attackStats);
+
             const sshStats = await sshApi.getStats(24);
             this.updateSSHStats(sshStats);
 
@@ -24,6 +29,11 @@ class Dashboard {
         } catch (error) {
             console.error('Error loading dashboard data:', error);
         }
+    }
+
+    updateAttackStats(stats) {
+        document.getElementById('stat-attacks-total').textContent = 
+            stats.total_attacks.toLocaleString();
     }
 
     updateSSHStats(stats) {

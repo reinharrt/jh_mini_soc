@@ -1,7 +1,7 @@
 // Attack Monitor Component
 class AttackMonitor {
     constructor() {
-        this.refreshInterval = 3000;
+        this.refreshInterval = 5000; // 5 seconds
         this.intervalId = null;
         this.currentPage = 0;
         this.pageSize = 50;
