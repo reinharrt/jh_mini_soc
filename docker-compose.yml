@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: soc-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mini_soc}
+      POSTGRES_USER: ${POSTGRES_USER:-socadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-socpass123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - soc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socadmin -d mini_soc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: soc-backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-socadmin}:${POSTGRES_PASSWORD:-socpass123}@postgres:5432/${POSTGRES_DB:-mini_soc}
+      LOG_PATH: /logs
+    volumes:
+      - ./logs:/logs:ro
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - soc-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: soc-frontend
+    ports:
+      - "8080:80"  # Host port 8080 -> Container port 80
+    networks:
+      - soc-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  soc-network:
+    driver: bridge
